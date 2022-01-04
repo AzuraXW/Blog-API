@@ -1,4 +1,31 @@
-const dotenv = require('dotenv')
-// 加载环境变量
-dotenv.config()
-console.log(process.env.MONGODB_URI)
+const Koa = require('koa')
+const bodyparser = require('koa-bodyparser')
+const cors = require('koa2-cors')
+const onerror = require('koa-onerror')
+const MongoDBConnect = require('./db/index.js')
+const clientRouters = require('./routers/client/index') // 前端api路由
+const adminRouters = require('./routers/admin/index')
+// 后台api路由
+const app = new Koa()
+
+// 连接数据库
+MongoDBConnect()
+
+// 解析请求数据
+app.use(bodyparser())
+
+// 跨域
+app.use(cors())
+
+// 添加路由中间件
+clientRouters.forEach((router) => {
+  app.use(router.routes(), router.allowedMethods())
+})
+adminRouters.forEach((router) => {
+  app.use(router.routes(), router.allowedMethods())
+})
+
+// 集中处理错误
+onerror(app)
+
+app.listen(3000)
