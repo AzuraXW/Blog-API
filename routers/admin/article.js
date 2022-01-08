@@ -3,6 +3,7 @@ const router = new Router({
   prefix: '/api/v1/admin/article'
 })
 const Article = require('../../models/article')
+const { parseValidateError } = require('../../utils/tool')
 
 // 获取文章列表
 router.get('/list', async (ctx) => {
@@ -27,13 +28,18 @@ router.post('/create', async (ctx) => {
     tag_id: tagId,
     author_id: authorId
   } = ctx.request.body
-  const result = await Article.create({
+  const article = new Article({
     title,
     content,
     tag_id: tagId,
     author_id: authorId
   })
-  if (result) {
+  const error = parseValidateError(article.validateSync())
+  // error数组为0 参数没有出现错误
+  if (!error.length) {
+    // 新建
+    const result = await article.save()
+    console.log(result)
     ctx.body = {
       code: 200,
       message: '新建文章成功',
@@ -41,17 +47,26 @@ router.post('/create', async (ctx) => {
         create_id: result._id
       }
     }
-  } else {
-    ctx.body = {
-      code: 200,
-      message: '新建文章错误'
-    }
+    return
+  }
+  ctx.body = {
+    code: 300,
+    message: '文章新建失败',
+    errors: error
   }
 })
 
 // 查找单个文章
 router.get('/detail', async (ctx) => {
   const id = ctx.query.id
+  if (!id) {
+    ctx.body = {
+      code: 300,
+      message: '缺少文章id'
+    }
+    return
+  }
+
   const result = await Article.findById(id)
   if (result) {
     ctx.body = {
