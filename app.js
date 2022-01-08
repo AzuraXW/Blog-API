@@ -26,6 +26,10 @@ adminRouters.forEach((router) => {
 })
 
 // 集中处理错误
-onerror(app)
+onerror(app, {
+  all: (err) => {
+    console.log(err.message)
+  }
+})
 
 app.listen(3000)

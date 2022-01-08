@@ -57,8 +57,8 @@ router.post('/create', async (ctx) => {
 })
 
 // 查找单个文章
-router.get('/detail', async (ctx) => {
-  const id = ctx.query.id
+router.get('/detail/:id', async (ctx) => {
+  const id = ctx.params.id
   if (!id) {
     ctx.body = {
       code: 300,
@@ -79,6 +79,21 @@ router.get('/detail', async (ctx) => {
   ctx.body = {
     code: 300,
     message: '查找失败'
+  }
+})
+
+// 更新文章
+router.post('/update/:id', async ctx => {
+  const id = ctx.params.id
+  const result = await Article.findByIdAndUpdate(
+    id,
+    ctx.request.body,
+    { runValidators: true }
+  )
+  ctx.body = {
+    code: 200,
+    message: '更新成功',
+    data: result
   }
 })
 

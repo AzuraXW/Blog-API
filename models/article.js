@@ -41,4 +41,15 @@ const articleSchema = new Schema({
 
 const Article = model('article', articleSchema)
 
+// 设置更新时使用的validator
+Article.schema.path('title').validate(function (value) {
+  return value.length > 0
+}, '标题不能为空')
+Article.schema.path('author_id').validate(function (value) {
+  return value.length > 0
+}, '作者id不能为空')
+Article.schema.path('content').validate(function (value) {
+  return value.length > 0
+}, '内容不能为空')
+
 module.exports = Article
