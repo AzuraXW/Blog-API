@@ -49,8 +49,9 @@ router.post('/create', async (ctx) => {
     }
     return
   }
+  ctx.body = 400
   ctx.body = {
-    code: 300,
+    code: 400,
     message: '文章新建失败',
     errors: error
   }
@@ -60,8 +61,9 @@ router.post('/create', async (ctx) => {
 router.get('/detail/:id', async (ctx) => {
   const id = ctx.params.id
   if (!id) {
+    ctx.status = 400
     ctx.body = {
-      code: 300,
+      code: 400,
       message: '缺少文章id'
     }
     return
@@ -76,9 +78,10 @@ router.get('/detail/:id', async (ctx) => {
     }
     return
   }
+  ctx.status = 400
   ctx.body = {
     code: 300,
-    message: '查找失败'
+    message: '文章不存在'
   }
 })
 
@@ -94,6 +97,24 @@ router.post('/update/:id', async ctx => {
     code: 200,
     message: '更新成功',
     data: result
+  }
+})
+
+// 删除文章
+router.post('/delete/:id', async ctx => {
+  const id = ctx.params.id
+  const result = await Article.deleteOne({ _id: id })
+  if (result.deletedCount > 0) {
+    ctx.body = {
+      code: 200,
+      message: '删除成功'
+    }
+    return
+  }
+  ctx.status = 400
+  ctx.body = {
+    code: 400,
+    message: '删除失败'
   }
 })
 
