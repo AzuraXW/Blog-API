@@ -13,6 +13,22 @@ function parseValidateError (error) {
   return errorArr
 }
 
+/**
+ * 过滤请求参数
+ * @param {*} data
+ * @param {*} conditions
+ */
+function filterRequestParams (data, conditions) {
+  const obj = {}
+  for (const key of conditions) {
+    console.log(key)
+    if (data[key]) {
+      obj[key] = data[key]
+    }
+  }
+  return obj
+}
 module.exports = {
-  parseValidateError
+  parseValidateError,
+  filterRequestParams
 }
