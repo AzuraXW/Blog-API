@@ -9,12 +9,11 @@ const router = new Router({
   prefix: '/api/v1/admin/tag'
 })
 
-bindAuthMiddware(router, {
-  path: ['/api/v1/admin/login']
-})
+// 绑定验证中间件
+bindAuthMiddware(router, {})
 
 router.post('/create', async ctx => {
-  const { name } = ctx.request.body
+  const { name = '' } = ctx.request.body
   const tag = new Tag({
     name
   })
