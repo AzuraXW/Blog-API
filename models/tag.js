@@ -6,7 +6,8 @@ const tagSchema = new Schema({
     required: {
       values: true,
       message: '标签名字不能为空'
-    }
+    },
+    unique: true
   },
   article_count: {
     type: Number,
