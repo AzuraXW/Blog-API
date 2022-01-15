@@ -1,5 +1,5 @@
 const koajwt = require('koa-jwt')
-const SECRET = require('./tool')
+const { SECRET } = require('./tool')
 
 module.exports = function (router, unless) {
   // 处理401权限验证不通过
@@ -19,10 +19,4 @@ module.exports = function (router, unless) {
 
   // 使用验证中间件
   router.use(koajwt({ secret: SECRET }).unless(unless))
-  /*
-  {
-    // 登录接口不需要验证
-    path: [/^\/api\/v1\/admin\/user\/login/]
-  }
-   */
 }
