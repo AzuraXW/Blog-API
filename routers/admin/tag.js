@@ -46,15 +46,14 @@ router.post('/create', async (ctx) => {
     }
     return
   }
-  const result = tag.save().catch(err => {
-      if(err.code === 11000){
-          ctx.status = 400
-          ctx.body = {
-              code: 400,
-              error: ['该标签名称已存在']
-          }
-          return
+  const result = tag.save().catch((err) => {
+    if (err.code === 11000) {
+      ctx.status = 400
+      ctx.body = {
+        code: 400,
+        error: ['该标签名称已存在']
       }
+    }
   })
   ctx.body = {
     code: 200,
