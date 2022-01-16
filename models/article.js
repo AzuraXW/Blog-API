@@ -1,7 +1,8 @@
 const { Schema, model } = require('mongoose')
 
 const notEmptyVaildator = (v) => {
-  return v.length > 0
+  console.log(v.toString().length > 0)
+  return v.toString().length > 0
 }
 
 const articleSchema = new Schema({
@@ -13,10 +14,10 @@ const articleSchema = new Schema({
     }
   },
   tag_id: {
-    type: String
+    type: Schema.ObjectId
   },
   author_id: {
-    type: String,
+    type: Schema.ObjectId,
     validate: {
       validator: notEmptyVaildator,
       message: '作者id不能为空'
@@ -46,7 +47,7 @@ Article.schema.path('title').validate(function (value) {
   return value.length > 0
 }, '标题不能为空')
 Article.schema.path('author_id').validate(function (value) {
-  return value.length > 0
+  return value.toString().length > 0
 }, '作者id不能为空')
 Article.schema.path('content').validate(function (value) {
   return value.length > 0
