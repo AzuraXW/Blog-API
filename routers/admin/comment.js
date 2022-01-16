@@ -61,34 +61,6 @@ router.post('/detail/:id', async (ctx) => {
   }
 })
 
-// 修改评论
-router.post('/update/:id', async (ctx) => {
-  const id = ctx.params.id
-  const { content } = ctx.request.body
-  if (!id) {
-    ctx.status = 400
-    ctx.body = {
-      code: 400,
-      message: '缺少评论id'
-    }
-  }
-  await Comment.findByIdAndUpdate(id, { content })
-    .then((res) => {
-      ctx.body = {
-        code: 200,
-        message: '修改成功',
-        data: res
-      }
-    })
-    .catch((err) => {
-      ctx.body = {
-        code: 500,
-        message: '修改失败',
-        err
-      }
-    })
-})
-
 // 删除评论
 router.post('/delete/:id', async (ctx) => {
   const id = ctx.params.id
