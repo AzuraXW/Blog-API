@@ -79,14 +79,69 @@ router.get('/list', async ctx => {
 
 router.get('/detail/:id', async ctx => {
   const id = ctx.params.id
-  const article = await Article.findById(id).select({
-    tag_id: 0,
-    author_id: 0
-  })
+  const article = await Article.aggregate([
+    {
+      $match: {
+        _id: mongoose.Types.ObjectId(id)
+      }
+    },
+    {
+      $lookup: {
+        from: 'tags',
+        localField: 'tag_id',
+        foreignField: '_id',
+        as: 'tag'
+      }
+    },
+    {
+      $lookup: {
+        from: 'admins',
+        localField: 'author_id',
+        foreignField: '_id',
+        as: 'author'
+      }
+    },
+    { $unwind: '$author' },
+    { $unwind: '$tag' },
+    {
+      $project: {
+        tag_id: 0,
+        author_id: 0,
+        content: 0,
+        'author.role': 0,
+        'author.password': 0,
+        'author.email': 0,
+        'author.avatar': 0,
+        'tag.article_count': 0
+      }
+    }
+  ])
   ctx.body = {
     code: '200',
     message: '获取成功',
     data: article
+  }
+})
+
+// 搜索接口
+router.get('/search', async ctx => {
+  const { keyword } = ctx.query
+  const articles = await Article.find({
+    $or: [
+      { title: { $regex: keyword, $options: '$i' } },
+      { content: { $regex: keyword, $options: '$i' } },
+      { description: { $regex: keyword, $options: '$i' } }
+    ]
+  }).select({
+    tag_id: 0,
+    author_id: 0,
+    content: 0
+  })
+  ctx.body = {
+    code: 200,
+    messsage: '搜索成功',
+    keyword,
+    data: articles
   }
 })
 
