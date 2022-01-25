@@ -16,6 +16,13 @@ const articleSchema = new Schema({
   tag_id: {
     type: Schema.ObjectId
   },
+  description: {
+    type: String,
+    validate: {
+      validator: notEmptyVaildator,
+      message: '文章摘要不能为空'
+    }
+  },
   author_id: {
     type: Schema.ObjectId,
     validate: {

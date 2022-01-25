@@ -62,13 +62,15 @@ router.post('/create', async (ctx) => {
   const {
     title,
     content,
-    tag_id: tagId
+    tag_id: tagId,
+    description
   } = ctx.request.body
   const article = new Article({
     title,
     content,
     tag_id: tagId,
-    author_id: authorId
+    author_id: authorId,
+    description
   })
   // console.log(authorId)
   const error = parseValidateError(article.validateSync())
