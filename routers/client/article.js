@@ -132,6 +132,9 @@ router.get('/search', async ctx => {
       { content: { $regex: keyword, $options: '$i' } },
       { description: { $regex: keyword, $options: '$i' } }
     ]
+  }).sort({
+    // 按发布日期降序排序
+    create_at: -1
   }).select({
     tag_id: 0,
     author_id: 0,
