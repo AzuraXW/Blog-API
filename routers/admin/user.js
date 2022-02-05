@@ -1,37 +1,22 @@
 const Router = require('koa-router')
 const md5 = require('md5')
-const koajwt = require('koa-jwt')
 const jwt = require('jwt-simple')
 const jsonwebtoken = require('jsonwebtoken')
+const bindAuthMiddware = require('../../utils/auth')
 const router = new Router({
   prefix: '/api/v1/admin/user'
 })
 const Admin = require('../../models/admin')
-const { parseValidateError, filterRequestParams } = require('../../utils/tool')
+const {
+  parseValidateError,
+  filterRequestParams,
+  SECRET
+} = require('../../utils/tool')
 
-// 密钥
-const SECRET = 'blog-api'
-
-// 处理401权限验证不通过
-router.use(function (ctx, next) {
-  return next().catch((err) => {
-    if (err.status === 401) {
-      ctx.status = 401
-      ctx.body = {
-        code: 401,
-        message: 'Authentication Error'
-      }
-    } else {
-      throw err
-    }
-  })
+// 绑定验证中间件
+bindAuthMiddware(router, {
+  path: ['/api/v1/admin/user/login']
 })
-
-// 使用验证中间件
-router.use(koajwt({ secret: SECRET }).unless({
-  // 登录接口不需要验证
-  path: [/^\/api\/v1\/admin\/user\/login/]
-}))
 
 router.post('/login', async ctx => {
   const {

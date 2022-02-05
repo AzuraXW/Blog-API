@@ -28,7 +28,11 @@ function filterRequestParams (data, conditions) {
   }
   return obj
 }
+
+const SECRET = 'blog-api'
+
 module.exports = {
   parseValidateError,
-  filterRequestParams
+  filterRequestParams,
+  SECRET
 }
