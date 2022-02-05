@@ -1,5 +1,4 @@
 const Router = require('koa-router')
-const jwt = require('jwt-simple')
 const bindAuthMiddware = require('../../utils/auth')
 const { parseValidateError } = require('../../utils/tool')
 const Tag = require('../../models/tag')
@@ -12,7 +11,7 @@ bindAuthMiddware(router, {})
 
 // 获取标签列表
 router.get('/list', async (ctx) => {
-  await Tag.find({})
+  await Tag.find()
     .then((rel) => {
       ctx.body = {
         code: 200,
@@ -46,26 +45,26 @@ router.post('/create', async (ctx) => {
     }
     return
   }
-  const result = tag.save().catch((err) => {
-    if (err.code === 11000) {
-      ctx.status = 400
-      ctx.body = {
-        code: 400,
-        error: ['该标签名称已存在']
+  try {
+    const result = await tag.save()
+    ctx.body = {
+      code: 200,
+      message: '标签创建成功',
+      data: {
+        id: result._id
       }
     }
-  })
-  ctx.body = {
-    code: 200,
-    message: '标签创建成功',
-    data: {
-      id: result._id
+  } catch (err) {
+    ctx.status = 400
+    ctx.body = {
+      code: 400,
+      message: '该标签名称已存在'
     }
   }
 })
 
 // 查询单个标签
-router.post('/detail/:id', async (ctx) => {
+router.get('/detail/:id', async (ctx) => {
   const id = ctx.params.id
   if (!id) {
     ctx.status = 400
