@@ -1,17 +1,53 @@
 const Router = require('koa-router')
+const jwt = require('jwt-simple')
 const router = new Router({
   prefix: '/api/v1/admin/article'
 })
 const Article = require('../../models/article')
-const { parseValidateError } = require('../../utils/tool')
+const { parseValidateError, SECRET } = require('../../utils/tool')
+const bindAuthMiddware = require('../../utils/auth')
+
+bindAuthMiddware(router, {})
 
 // 获取文章列表
 router.get('/list', async (ctx) => {
   const { page = 1, limit = 10 } = ctx.query
-  const articles = await Article
-    .find()
-    .skip(page - 1)
-    .limit(parseInt(limit))
+  const articles = await Article.aggregate([
+    {
+      $skip: page - 1
+    },
+    {
+      $limit: parseInt(limit)
+    },
+    {
+      $lookup: {
+        from: 'tags',
+        localField: 'tag_id',
+        foreignField: '_id',
+        as: 'tag'
+      }
+    },
+    {
+      $lookup: {
+        from: 'admins',
+        localField: 'author_id',
+        foreignField: '_id',
+        as: 'author'
+      }
+    },
+    {
+      $project: {
+        tag_id: 0,
+        author_id: 0,
+        content: 0,
+        'author.role': 0,
+        'author.password': 0,
+        'tag.article_count': 0
+      }
+    },
+    { $unwind: '$author' },
+    { $unwind: '$tag' }
+  ])
   ctx.body = {
     code: 200,
     message: '本次获取' + articles.length + '条文章数据',
@@ -22,18 +58,21 @@ router.get('/list', async (ctx) => {
 
 // 添加文章
 router.post('/create', async (ctx) => {
+  const authorId = jwt.decode(ctx.headers.authorization.split(' ')[1], SECRET).id
   const {
     title,
     content,
     tag_id: tagId,
-    author_id: authorId
+    description
   } = ctx.request.body
   const article = new Article({
     title,
     content,
     tag_id: tagId,
-    author_id: authorId
+    author_id: authorId,
+    description
   })
+  // console.log(authorId)
   const error = parseValidateError(article.validateSync())
   // error数组为0 参数没有出现错误
   if (!error.length) {

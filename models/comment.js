@@ -8,7 +8,14 @@ const commentSchema = new Schema({
     type: String
   },
   content: {
-    type: String
+    type: String,
+    validate: {
+      validator: (content) => {
+        const patt = /[艹,操,草,cao]你妈/g
+        return !patt.test(content)
+      },
+      message: '不能说脏话哦'
+    }
   },
   create_at: {
     type: Date,
