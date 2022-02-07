@@ -21,7 +21,6 @@ function parseValidateError (error) {
 function filterRequestParams (data, conditions) {
   const obj = {}
   for (const key of conditions) {
-    console.log(key)
     if (data[key]) {
       obj[key] = data[key]
     }
