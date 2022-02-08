@@ -8,8 +8,8 @@ const rolePermissionSchema = new Schema({
       message: '角色id不能为空'
     }
   },
-  permissionId: {
-    type: SchemaTypes.ObjectId,
+  permissionCode: {
+    type: String,
     drequired: {
       values: true,
       message: '权限id不能为空'

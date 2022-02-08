@@ -5,8 +5,17 @@ const router = new Router({
 })
 const Role = require('../../models/role')
 const UserRole = require('../../models/userRole')
+const Permission = require('../../models/permission')
 const { parseValidateError, SECRET, filterRequestParams } = require('../../utils/tool')
 const bindAuthMiddware = require('../../utils/auth')
+const {
+  assignRole,
+  removeRole,
+  diff,
+  assignPermission,
+  removePermission
+} = require('../../utils/access')
+const RolePermission = require('../../models/rolePermission')
 
 bindAuthMiddware(router, {})
 
@@ -31,7 +40,7 @@ router.post('/role', async ctx => {
 })
 
 // 删除角色
-router.delete('/role', async ctx => {
+router.post('/role/delete', async ctx => {
   const {
     roleId
   } = filterRequestParams(ctx.request.body, ['roleId'])
@@ -62,61 +71,6 @@ router.get('/roles', async ctx => {
   }
 })
 
-// 为用户分配角色
-function assignRole (userId, roleIds) {
-  const result = []
-  if (!roleIds.length) {
-    return Promise.resolve([])
-  }
-  // 一次性可以分配多个角色
-  return new Promise((resolve, reject) => {
-    roleIds.forEach(async (roleId, index) => {
-      const res = await UserRole.create({
-        userId,
-        roleId
-      })
-      result.push(res)
-      if (index === roleIds.length - 1) {
-        resolve(result)
-      }
-    })
-  })
-}
-
-// 删除用户的角色
-function removeRole (userId, roleIds) {
-  const result = []
-  if (!roleIds.length) {
-    return Promise.resolve([])
-  }
-  return new Promise((resolve, reject) => {
-    roleIds.forEach(async (roleId, index) => {
-      const res = await UserRole.deleteOne({
-        userId,
-        roleId
-      })
-      result.push(res)
-      if (index === roleIds.length - 1) {
-        resolve(result)
-      }
-    })
-  })
-}
-
-// 计算出需要删除的记录id，和需要新增加的记录id
-function diff (oldArr, newArr) {
-  const removeIds = oldArr.filter(id => {
-    return !newArr.includes(id)
-  })
-  const createIds = newArr.filter(id => {
-    return !oldArr.includes(id)
-  })
-  return {
-    removeIds,
-    createIds
-  }
-}
-
 // 调整用户角色
 router.post('/user/role', async ctx => {
   const params = filterRequestParams(ctx.request.body, ['userId', 'roleIds'])
@@ -137,6 +91,42 @@ router.post('/user/role', async ctx => {
       code: 200,
       message: `添加了${result.length}个角色, 删除了${removeResult.length}个角色`,
       add: result
+    }
+  } catch (err) {
+    ctx.status = 400
+    ctx.body = {
+      code: 400,
+      message: '发生错误',
+      errors: parseValidateError(err)
+    }
+  }
+})
+
+// 权限列表
+router.get('/permission', async ctx => {
+  const list = await Permission.find()
+  ctx.body = {
+    code: 200,
+    data: list
+  }
+})
+
+router.post('/role/permission', async ctx => {
+  let { roleId, permissionCodes } = filterRequestParams(ctx.request.body, ['roleId', 'permissionCodes'])
+  permissionCodes = permissionCodes ? permissionCodes.split(',') : ''
+  // 获取角色原本拥有的权限
+  let oldPermissionCodes = await RolePermission.find({
+    roleId
+  })
+  oldPermissionCodes = oldPermissionCodes.map(x => x.permissionCode.toString())
+  try {
+    const { removeIds: removeCodes, createIds: createCodes } = diff(oldPermissionCodes, permissionCodes)
+    const removeResult = await removePermission(roleId, removeCodes)
+    const addResult = await assignPermission(roleId, createCodes)
+    ctx.body = {
+      code: 200,
+      message: `添加了${addResult.length}条权限，删除了${removeResult.length}个权限`,
+      add: addResult
     }
   } catch (err) {
     ctx.status = 400

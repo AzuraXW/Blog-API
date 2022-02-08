@@ -11,6 +11,12 @@ const permissionSchema = new Schema({
   name: {
     type: String,
     default: ''
+  },
+  category: {
+    type: String
+  },
+  code: {
+    type: String
   }
 })
 
