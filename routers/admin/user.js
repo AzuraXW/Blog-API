@@ -56,16 +56,24 @@ router.post('/create', async ctx => {
     username,
     avatar = '',
     email,
-    password,
-    role = ''
+    password
   } = ctx.request.body
-  console.log(username)
+  const repeatUser = await Admin.find({
+    email
+  })
+  if (repeatUser.length > 0) {
+    ctx.status = 400
+    ctx.body = {
+      code: 400,
+      message: '该邮箱已经存在'
+    }
+    return
+  }
   const user = new Admin({
     username,
     avatar,
     email,
-    password: md5(password),
-    role
+    password: md5(password)
   })
   const errors = parseValidateError(user.validateSync())
   if (errors.length) {
@@ -185,6 +193,28 @@ router.post('/update/pwd', async ctx => {
       code: 200,
       message: '密码更新成功'
     }
+  }
+})
+
+// 获取用户的角色信息
+router.post('/user-roles', async ctx => {
+  const { userId } = ctx.request.body
+  const roles = await getUserRoles(userId)
+  ctx.body = {
+    code: 200,
+    message: '获取成功',
+    data: roles
+  }
+})
+
+// 获取用户的权限信息
+router.post('/user-permiss', async ctx => {
+  const { userId } = ctx.request.body
+  const permission = await getUserPermission(userId)
+  ctx.body = {
+    code: 200,
+    message: '获取成功',
+    data: permission
   }
 })
 
