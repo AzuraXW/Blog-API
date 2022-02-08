@@ -111,6 +111,7 @@ router.get('/permission', async ctx => {
   }
 })
 
+// 调整角色关联的权限
 router.post('/role/permission', async ctx => {
   let { roleId, permissionCodes } = filterRequestParams(ctx.request.body, ['roleId', 'permissionCodes'])
   permissionCodes = permissionCodes ? permissionCodes.split(',') : ''

@@ -13,7 +13,8 @@ const userRoleSchema = new Schema({
     required: {
       values: true,
       message: '角色id不能为空'
-    }
+    },
+    ref: 'role'
   }
 })
 

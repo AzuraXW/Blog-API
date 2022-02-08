@@ -3,6 +3,7 @@ const md5 = require('md5')
 const jwt = require('jwt-simple')
 const jsonwebtoken = require('jsonwebtoken')
 const bindAuthMiddware = require('../../utils/auth')
+const { getUserRoles, getUserPermission } = require('../../utils/access')
 const router = new Router({
   prefix: '/api/v1/admin/user'
 })
@@ -111,13 +112,15 @@ router.post('/update', async ctx => {
 // 获取用户信息
 router.get('/info', async ctx => {
   // 解析用户携带的token
-  const payload = jwt.decode(ctx.headers.authorization.split(' ')[1], SECRET)
-  const user = await Admin.findById(payload.id).select('username avatar email role')
+  const { id: userId } = jwt.decode(ctx.headers.authorization.split(' ')[1], SECRET)
+  const roles = await getUserRoles(userId)
+  const user = await Admin.findById(userId).select('username avatar email').lean()
+  user.roles = roles
   if (user) {
     ctx.body = {
       code: 200,
       message: '获取成功',
-      result: user
+      data: user
     }
     return
   }

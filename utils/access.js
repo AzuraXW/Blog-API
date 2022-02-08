@@ -1,5 +1,6 @@
 const UserRole = require('../models/userRole')
 const RolePermission = require('../models/rolePermission')
+const Permission = require('../models/permission')
 // 为用户分配角色
 function assignRole (userId, roleIds) {
   const result = []
@@ -95,10 +96,52 @@ function removePermission (roleId, permissionCodes) {
   })
 }
 
+// 获取用户拥有的角色
+function getUserRoles (userId) {
+  return new Promise(async (resolve, reject) => {
+    let result = await UserRole.find({
+      userId
+    }).populate('roleId')
+    result = result.map(x => ({
+      name: x.roleId.name,
+      description: x.roleId.description,
+      _id: x.roleId._id
+    }))
+    resolve(result)
+  })
+}
+
+// 获取用户拥有的角色
+function getUserPermission (userId) {
+  return new Promise(async (resolve, reject) => {
+    // 查找出用户所有角色的id
+    let roleIds = await UserRole.find({
+      userId
+    })
+    roleIds = roleIds.map(x => x.roleId)
+    // 查找这些角色所属的权限code
+    let permissionCodes = await RolePermission.find({
+      roleId: {
+        $in: roleIds
+      }
+    })
+    permissionCodes = permissionCodes.map(x => x.permissionCode)
+    // 最后查找出权限列表
+    const permission = await Permission.find({
+      code: {
+        $in: permissionCodes
+      }
+    })
+    resolve(permission)
+  })
+}
+
 module.exports = {
   assignRole,
   removeRole,
   assignPermission,
   removePermission,
-  diff
+  diff,
+  getUserRoles,
+  getUserPermission
 }
