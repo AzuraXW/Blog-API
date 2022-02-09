@@ -105,6 +105,7 @@ const permissionsList = [
     category: 'user'
   }
 ]
+
 function initPermiss () {
   Permission.remove({})
   Permission.insertMany(permissionsList)

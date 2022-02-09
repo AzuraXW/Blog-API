@@ -21,7 +21,7 @@ bindAuthMiddware(router, {})
 
 // 添加角色
 router.post('/role', async ctx => {
-  const params = filterRequestParams(ctx.request.body, ['name', 'description'])
+  const params = filterRequestParams(ctx.request.body, ['name', 'description', 'code'])
   try {
     const res = await Role.create(params)
     ctx.body = {

@@ -8,6 +8,13 @@ const roleSchema = new Schema({
       message: '角色名称不能为空'
     }
   },
+  code: {
+    type: String,
+    required: {
+      values: true,
+      message: '角色英文名不能为空'
+    }
+  },
   description: {
     type: String,
     default: ''

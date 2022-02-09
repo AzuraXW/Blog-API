@@ -103,9 +103,10 @@ function getUserRoles (userId) {
       userId
     }).populate('roleId')
     result = result.map(x => ({
+      _id: x.roleId._id,
       name: x.roleId.name,
       description: x.roleId.description,
-      _id: x.roleId._id
+      code: x.roleId.code
     }))
     resolve(result)
   })
@@ -136,6 +137,28 @@ function getUserPermission (userId) {
   })
 }
 
+// 判断用户是否拥有某一项权限
+async function hasPermission (userId, url) {
+  // 如果该用户是超级管理员，默认直接拥有所有权限，绕过验证
+  const roles = await getUserRoles(userId)
+  const roleNames = roles.map(x => x.code)
+  if (roleNames.includes('super_admin')) return true
+
+  // 如果该url不存在所有的权限列表中，则表示所有的用户都可以访问
+  const allPermissions = await Permission.find()
+  const isExist = allPermissions.some((permiss) => {
+    return permiss.url === url
+  })
+  if (!isExist) return true
+
+  // 正常验证普通用户的权限
+  const permissions = await getUserPermission(userId)
+  const arr = permissions.find((permission) => {
+    return permission.url === url
+  })
+  return arr !== undefined
+}
+
 module.exports = {
   assignRole,
   removeRole,
@@ -143,5 +166,6 @@ module.exports = {
   removePermission,
   diff,
   getUserRoles,
-  getUserPermission
+  getUserPermission,
+  hasPermission
 }
