@@ -13,7 +13,8 @@ const {
   removeRole,
   diff,
   assignPermission,
-  removePermission
+  removePermission,
+  getRolePermission
 } = require('../../utils/access')
 const RolePermission = require('../../models/rolePermission')
 
@@ -136,6 +137,17 @@ router.post('/role/permission', async ctx => {
       message: '发生错误',
       errors: parseValidateError(err)
     }
+  }
+})
+
+// 获取角色的权限信息
+router.post('/role-permiss', async ctx => {
+  const { roleId } = ctx.request.body
+  const permission = await getRolePermission(roleId)
+  ctx.body = {
+    code: 200,
+    message: '获取成功',
+    data: permission
   }
 })
 

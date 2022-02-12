@@ -38,7 +38,7 @@ module.exports = function (router, unless) {
     if (!isNext) {
       ctx.status = 403
       ctx.body = {
-        code: '50346',
+        code: 50346,
         message: '缺少访问权限'
       }
       return
