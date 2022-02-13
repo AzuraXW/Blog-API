@@ -15,9 +15,10 @@ router.get('/list', async (ctx) => {
     page = 1,
     limit = 10,
     startTime = 0,
-    endTime = Date.now()
+    endTime = Date.now(),
+    keyword = ''
   } = ctx.query
-  const articles = await Article.aggregate([
+  const condition = [
     {
       $match: {
         create_at: {
@@ -59,13 +60,29 @@ router.get('/list', async (ctx) => {
     },
     { $unwind: '$author' },
     { $unwind: '$tag' }
-  ])
-  const pageCount = await Article.find({
+  ]
+  const conditionTwo = {
     create_at: {
       $gt: new Date(parseInt(startTime)),
       $lt: new Date(parseInt(endTime))
     }
-  }).count()
+  }
+  // 添加搜索关键字条件
+  if (keyword) {
+    const $or = [
+      { title: { $regex: keyword, $options: '$i' } },
+      { content: { $regex: keyword, $options: '$i' } },
+      { description: { $regex: keyword, $options: '$i' } }
+    ]
+    condition.push({
+      $match: {
+        $or
+      }
+    })
+    conditionTwo.$or = $or
+  }
+  const articles = await Article.aggregate(condition)
+  const pageCount = await Article.find(conditionTwo).count()
   ctx.body = {
     code: '200',
     message: '本次获取' + articles.length + '条文章数据',
