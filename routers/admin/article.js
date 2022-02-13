@@ -11,10 +11,23 @@ bindAuthMiddware(router, {})
 
 // 获取文章列表
 router.get('/list', async (ctx) => {
-  const { page = 1, limit = 10 } = ctx.query
+  const {
+    page = 1,
+    limit = 10,
+    startTime = 0,
+    endTime = Date.now()
+  } = ctx.query
   const articles = await Article.aggregate([
     {
-      $skip: page - 1
+      $match: {
+        create_at: {
+          $gt: new Date(parseInt(startTime)),
+          $lt: new Date(parseInt(endTime))
+        }
+      }
+    },
+    {
+      $skip: (page - 1) * limit
     },
     {
       $limit: parseInt(limit)
@@ -39,7 +52,6 @@ router.get('/list', async (ctx) => {
       $project: {
         tag_id: 0,
         author_id: 0,
-        content: 0,
         'author.role': 0,
         'author.password': 0,
         'tag.article_count': 0
@@ -48,23 +60,29 @@ router.get('/list', async (ctx) => {
     { $unwind: '$author' },
     { $unwind: '$tag' }
   ])
+  const pageCount = await Article.find({
+    create_at: {
+      $gt: new Date(parseInt(startTime)),
+      $lt: new Date(parseInt(endTime))
+    }
+  }).count()
   ctx.body = {
-    code: 200,
+    code: '200',
     message: '本次获取' + articles.length + '条文章数据',
     count: articles.length,
+    pageCount: Math.ceil(pageCount / limit),
     data: articles
   }
 })
 
 // 添加文章
 router.post('/create', async (ctx) => {
-  const authorId = jwt.decode(ctx.headers.authorization.split(' ')[1], SECRET).id
-  const {
-    title,
-    content,
-    tag_id: tagId,
-    description
-  } = ctx.request.body
+  const authorId = jwt.decode(
+    ctx.headers.authorization.split(' ')[1],
+    SECRET
+  ).id
+  const { title, content, tag_id: tagId, description } = ctx.request.body
+  console.log(title, content, description)
   const article = new Article({
     title,
     content,
@@ -72,15 +90,14 @@ router.post('/create', async (ctx) => {
     author_id: authorId,
     description
   })
-  // console.log(authorId)
   const error = parseValidateError(article.validateSync())
   // error数组为0 参数没有出现错误
   if (!error.length) {
     // 新建
     const result = await article.save()
-    console.log(result)
+    // console.log(result)
     ctx.body = {
-      code: 200,
+      code: '200',
       message: '新建文章成功',
       data: {
         create_id: result._id
@@ -88,9 +105,9 @@ router.post('/create', async (ctx) => {
     }
     return
   }
-  ctx.body = 400
+  ctx.body.status = 400
   ctx.body = {
-    code: 400,
+    code: '400',
     message: '文章新建失败',
     errors: error
   }
@@ -102,7 +119,7 @@ router.get('/detail/:id', async (ctx) => {
   if (!id) {
     ctx.status = 400
     ctx.body = {
-      code: 400,
+      code: '400',
       message: '缺少文章id'
     }
     return
@@ -111,7 +128,7 @@ router.get('/detail/:id', async (ctx) => {
   const result = await Article.findById(id)
   if (result) {
     ctx.body = {
-      code: 200,
+      code: '200',
       message: '获取成功',
       data: result
     }
@@ -119,40 +136,38 @@ router.get('/detail/:id', async (ctx) => {
   }
   ctx.status = 400
   ctx.body = {
-    code: 300,
+    code: '300',
     message: '文章不存在'
   }
 })
 
 // 更新文章
-router.post('/update/:id', async ctx => {
+router.post('/update/:id', async (ctx) => {
   const id = ctx.params.id
-  const result = await Article.findByIdAndUpdate(
-    id,
-    ctx.request.body,
-    { runValidators: true }
-  )
+  const result = await Article.findByIdAndUpdate(id, ctx.request.body, {
+    runValidators: true
+  })
   ctx.body = {
-    code: 200,
+    code: '200',
     message: '更新成功',
     data: result
   }
 })
 
 // 删除文章
-router.post('/delete/:id', async ctx => {
+router.post('/delete/:id', async (ctx) => {
   const id = ctx.params.id
   const result = await Article.deleteOne({ _id: id })
   if (result.deletedCount > 0) {
     ctx.body = {
-      code: 200,
+      code: '200',
       message: '删除成功'
     }
     return
   }
   ctx.status = 400
   ctx.body = {
-    code: 400,
+    code: '400',
     message: '删除失败'
   }
 })

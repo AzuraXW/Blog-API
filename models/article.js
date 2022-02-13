@@ -8,6 +8,7 @@ const notEmptyVaildator = (v) => {
 const articleSchema = new Schema({
   title: {
     type: String,
+    index: true,
     validate: {
       validator: notEmptyVaildator,
       message: '文章标题不能为空'
@@ -46,6 +47,8 @@ const articleSchema = new Schema({
     default: Date.now
   }
 })
+
+articleSchema.index({ title: 'text' })
 
 const Article = model('article', articleSchema)
 
