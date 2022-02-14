@@ -167,7 +167,10 @@ router.get('/detail/:id', async (ctx) => {
 // 更新文章
 router.post('/update/:id', async (ctx) => {
   const id = ctx.params.id
-  const result = await Article.findByIdAndUpdate(id, ctx.request.body, {
+  const result = await Article.findByIdAndUpdate(id, {
+    ...ctx.request.body,
+    update_at: new Date().toString()
+  }, {
     runValidators: true
   })
   ctx.body = {
