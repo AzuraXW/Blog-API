@@ -28,6 +28,11 @@ router.get('/list', async (ctx) => {
       }
     },
     {
+      $sort: {
+        create_at: -1
+      }
+    },
+    {
       $skip: (page - 1) * limit
     },
     {
@@ -82,7 +87,8 @@ router.get('/list', async (ctx) => {
     conditionTwo.$or = $or
   }
   const articles = await Article.aggregate(condition)
-  const pageCount = await Article.find(conditionTwo).count()
+  let pageCount = await Article.find(conditionTwo).count()
+  pageCount = pageCount === 0 ? 1 : pageCount
   ctx.body = {
     code: '200',
     message: '本次获取' + articles.length + '条文章数据',
