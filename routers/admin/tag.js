@@ -11,7 +11,18 @@ bindAuthMiddware(router, {})
 
 // 获取标签列表
 router.get('/list', async (ctx) => {
-  await Tag.find()
+  const { startTime = 0, endTime = Date.now(), keyword = '' } = ctx.query
+  const condition = {
+    create_at: {
+      $gt: new Date(parseInt(startTime)),
+      $lt: new Date(parseInt(endTime))
+    }
+  }
+  if (keyword) {
+    const $or = [{ name: { $regex: keyword, $options: '$i' } }]
+    condition.$or = $or
+  }
+  await Tag.find(condition)
     .then((rel) => {
       ctx.body = {
         code: 200,
@@ -127,17 +138,27 @@ router.post('/update/:id', async (ctx) => {
 // 删除标签
 router.post('/delete/:id', async (ctx) => {
   const id = ctx.params.id
+  // 判断该标签下是否还有文章
+  const tag = await Tag.findById(id)
+  if (tag.article_count !== 0) {
+    ctx.status = 400
+    ctx.body = {
+      code: '400',
+      message: '该标签下存在文章'
+    }
+    return
+  }
   const result = await Tag.deleteOne({ _id: id })
   if (result.deletedCount > 0) {
     ctx.body = {
-      code: 200,
+      code: '200',
       message: '删除成功'
     }
     return
   }
   ctx.status = 400
   ctx.body = {
-    code: 400,
+    code: '400',
     message: '删除失败'
   }
 })
