@@ -126,6 +126,7 @@ router.post('/update/:id', async (ctx) => {
       code: 400,
       message: '缺少标签id'
     }
+    return
   }
   await Tag.findByIdAndUpdate(id, { name }, { runValidators: true })
     .then((res) => {
@@ -137,14 +138,16 @@ router.post('/update/:id', async (ctx) => {
     })
     .catch((err) => {
       let error = []
-      error = parseValidateError(err)
       if (err.code === 11000) {
         error.push('该标签名称已存在')
+      } else {
+        error = parseValidateError(err)
       }
+      error = error.join(',')
+      ctx.status = 400
       ctx.body = {
-        code: 500,
-        message: '修改失败',
-        errors: error
+        code: '400',
+        message: error
       }
     })
 })
