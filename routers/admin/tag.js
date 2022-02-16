@@ -12,32 +12,46 @@ bindAuthMiddware(router, {})
 // 获取标签列表
 router.get('/list', async (ctx) => {
   const { startTime = 0, endTime = Date.now(), keyword = '' } = ctx.query
-  const condition = {
-    create_at: {
-      $gt: new Date(parseInt(startTime)),
-      $lt: new Date(parseInt(endTime))
+  const condition = [
+    {
+      $match: {
+        create_at: {
+          $gt: new Date(parseInt(startTime)),
+          $lt: new Date(parseInt(endTime))
+        }
+      }
+    },
+    {
+      $lookup: {
+        from: 'articles',
+        localField: '_id',
+        foreignField: 'tag_id',
+        as: 'articles'
+      }
     }
-  }
+  ]
   if (keyword) {
     const $or = [{ name: { $regex: keyword, $options: '$i' } }]
-    condition.$or = $or
+    condition.push({
+      $match: {
+        $or
+      }
+    })
   }
-  await Tag.find(condition)
-    .then((rel) => {
-      ctx.body = {
-        code: 200,
-        message: '获取成功',
-        data: rel
-      }
-    })
-    .catch((err) => {
-      ctx.status = 400
-      ctx.body = {
-        code: 400,
-        message: '查询时出现异常',
-        err
-      }
-    })
+  const res = await Tag.aggregate(condition)
+  const result = res.map(item => {
+    return {
+      _id: item._id,
+      name: item.name,
+      create_at: item.create_at,
+      article_count: item.articles.length
+    }
+  })
+  ctx.body = {
+    code: 200,
+    message: '获取成功',
+    data: result
+  }
 })
 
 // 创建新的标签
