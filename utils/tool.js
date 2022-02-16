@@ -1,3 +1,5 @@
+const jwt = require('jwt-simple')
+
 /**
  * 解析model验证器返回的错误
  * 解析成数组的形式
@@ -30,8 +32,17 @@ function filterRequestParams (data, conditions) {
 
 const SECRET = 'blog-api'
 
+// 提取token中的id
+function tokenToId (token) {
+  return jwt.decode(
+    token.split(' ')[1],
+    SECRET
+  ).id
+}
+
 module.exports = {
   parseValidateError,
   filterRequestParams,
-  SECRET
+  SECRET,
+  tokenToId
 }

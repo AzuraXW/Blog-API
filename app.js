@@ -1,5 +1,5 @@
 const Koa = require('koa')
-const bodyparser = require('koa-bodyparser')
+const koaBody = require('koa-body')
 const cors = require('koa2-cors')
 const onerror = require('koa-onerror')
 const MongoDBConnect = require('./db/index.js')
@@ -12,7 +12,9 @@ const app = new Koa()
 MongoDBConnect()
 
 // 解析请求数据
-app.use(bodyparser())
+app.use(koaBody({
+  multipart: true
+}))
 
 // 跨域
 app.use(cors())
