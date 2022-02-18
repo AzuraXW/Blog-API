@@ -4,7 +4,6 @@ const tag = require('./tag')
 const comment = require('./comment')
 const auth = require('./auth')
 const upload = require('./upload')
-const visit = require('./visit')
 const statistics = require('./statistics')
 module.exports = [
   article,
@@ -13,6 +12,5 @@ module.exports = [
   comment,
   auth,
   upload,
-  visit,
   statistics
 ]
