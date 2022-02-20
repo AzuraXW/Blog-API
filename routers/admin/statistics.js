@@ -6,6 +6,7 @@ const moment = require('moment')
 const Article = require('../../models/article')
 const Visit = require('../../models/visit')
 
+// 文章总数
 router.get('/article/count', async (ctx) => {
   const todayDate = moment().format('ll')
   const yesterdayDate = moment().subtract(1, 'day').format('ll')
@@ -31,42 +32,28 @@ router.get('/article/count', async (ctx) => {
   }
 })
 
-router.get('/article/week', async (ctx) => {
+// 文章图表数据
+router.get('/article/chart', async (ctx) => {
+  const { preset_date: presetDate } = ctx.query
+  // 图标横轴标签
   const labels = []
-  const data = []
-  let weekCount = 0
-  for (let i = 0; i < 7; i++) {
-    const week = moment().locale('zh-cn').subtract(i, 'days').format('dddd')
-    const d1 = new Date(moment().subtract(i, 'days').format('LL'))
-    const d2 = new Date(
-      moment()
-        .subtract(i - 1, 'days')
-        .format('LL')
-    )
-    const todayCount = await Article.find({
-      create_at: { $gte: d1, $lt: d2 }
-    }).count()
-    weekCount += todayCount
-    labels.unshift(week)
-    data.unshift(todayCount)
-  }
-  ctx.body = {
-    code: '200',
-    labels,
-    data,
-    message: `近7天共创作：${weekCount}篇文章`,
-    count: weekCount
-  }
-})
-
-router.get('/article/month', async (ctx) => {
-  const labels = []
+  // 标签对应的数据
   const data = []
   // const date = new Date()
   // const day = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
-  const day = 30
-  let monthCount = 0
-  for (let i = 0; i < day; i++) {
+  let dayRange = 7
+  if (presetDate === 'week') {
+    // 一个星期的数据
+    dayRange = 7
+  } else if (presetDate === 'month') {
+    // 一个月的数据
+    dayRange = 30
+  }
+
+  // 一段时间的总数量
+  let count = 0
+
+  for (let i = 0; i < dayRange; i++) {
     const time = moment().locale('zh-cn').subtract(i, 'days').format('ll')
     const d1 = new Date(moment().subtract(i, 'days').format('LL'))
     const d2 = new Date(
@@ -74,22 +61,24 @@ router.get('/article/month', async (ctx) => {
         .subtract(i - 1, 'days')
         .format('LL')
     )
+    // 今日的文章数量
     const todayCount = await Article.find({
       create_at: { $gte: d1, $lt: d2 }
     }).count()
-    monthCount += todayCount
+    count += todayCount
     labels.unshift(time)
     data.unshift(todayCount)
   }
   ctx.body = {
-    code: '200',
+    code: 200,
     labels,
     data,
-    message: `近30天共创作：${monthCount}篇文章`,
-    count: monthCount
+    message: `近${dayRange}天共创作：${count}篇文章`,
+    count
   }
 })
 
+// 访问总数
 router.get('/visit/count', async (ctx) => {
   const todayDate = moment().format('ll')
   const yesterdayDate = moment().subtract(1, 'day').format('ll')
@@ -115,40 +104,27 @@ router.get('/visit/count', async (ctx) => {
   }
 })
 
-router.get('/visit/week', async (ctx) => {
+// 访问人数图表数据
+router.get('/visit/chart', async (ctx) => {
+  const { preset_date: presetDate } = ctx.query
+  // 图表横轴标签
   const labels = []
+  // 标签对应的数据
   const data = []
-  let weekCount = 0
-  for (let i = 0; i < 7; i++) {
-    const week = moment().locale('zh-cn').subtract(i, 'days').format('dddd')
-    const d1 = new Date(moment().subtract(i, 'days').format('LL'))
-    const d2 = new Date(
-      moment()
-        .subtract(i - 1, 'days')
-        .format('LL')
-    )
-    const todayCount = await Visit.find({
-      access_at: { $gte: d1, $lt: d2 }
-    }).count()
-    weekCount += todayCount
-    labels.unshift(week)
-    data.unshift(todayCount)
-  }
-  ctx.body = {
-    code: '200',
-    labels,
-    data,
-    message: `近7天共有：${weekCount}个用户访问`,
-    count: weekCount
-  }
-})
 
-router.get('/visit/month', async (ctx) => {
-  const labels = []
-  const data = []
-  const day = 30
-  let monthCount = 0
-  for (let i = 0; i < day; i++) {
+  let dayRange = 7
+  if (presetDate === 'week') {
+    // 一个星期的数据
+    dayRange = 7
+  } else if (presetDate === 'month') {
+    // 一个月的数据
+    dayRange = 30
+  }
+
+  // 一段时间的总数量
+  let count = 0
+
+  for (let i = 0; i < dayRange; i++) {
     const time = moment().locale('zh-cn').subtract(i, 'days').format('ll')
     const d1 = new Date(moment().subtract(i, 'days').format('LL'))
     const d2 = new Date(
@@ -156,19 +132,20 @@ router.get('/visit/month', async (ctx) => {
         .subtract(i - 1, 'days')
         .format('LL')
     )
+    // 今日的访问人数
     const todayCount = await Visit.find({
-      access_at: { $gte: d1, $lt: d2 }
+      create_at: { $gte: d1, $lt: d2 }
     }).count()
-    monthCount += todayCount
+    count += todayCount
     labels.unshift(time)
     data.unshift(todayCount)
   }
   ctx.body = {
-    code: '200',
+    code: 200,
     labels,
     data,
-    message: `近30天共有：${monthCount}个用户访问`,
-    count: monthCount
+    message: `近${dayRange}天共有：${count}个用户访问`,
+    count
   }
 })
 
