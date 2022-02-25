@@ -6,7 +6,7 @@ const router = new Router({
 const Admin = require('../../models/admin')
 const { tokenToId } = require('../../utils/tool')
 const bindAuthMiddware = require('../../utils/auth')
-const { uploadOSS, removeOSS } = require('../../utils/upload')
+const { uploadOSS, removeOSS, getOSS } = require('../../utils/upload')
 
 bindAuthMiddware(router, {})
 
@@ -49,6 +49,17 @@ router.post('/avatar', async ctx => {
       code: 400,
       ...error
     }
+  }
+})
+
+// 获取图片
+router.post('/img', async ctx => {
+  const { key } = ctx.request.body
+  const url = await getOSS(key)
+  console.log(url)
+  ctx.body = {
+    code: '200',
+    data: url
   }
 })
 
