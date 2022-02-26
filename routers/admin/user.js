@@ -2,6 +2,7 @@ const Router = require('koa-router')
 const md5 = require('md5')
 const jwt = require('jwt-simple')
 const jsonwebtoken = require('jsonwebtoken')
+const dotenv = require('dotenv')
 const bindAuthMiddware = require('../../utils/auth')
 const { getUserRoles, getUserPermission } = require('../../utils/access')
 const router = new Router({
@@ -14,6 +15,8 @@ const {
   SECRET
 } = require('../../utils/tool')
 
+// 加载环境变量
+dotenv.config()
 // 绑定验证中间件
 bindAuthMiddware(router, {
   path: ['/api/v1/admin/user/login']
@@ -124,6 +127,9 @@ router.get('/info', async ctx => {
   const roles = await getUserRoles(userId)
   const user = await Admin.findById(userId).select('username avatar email').lean()
   user.roles = roles
+  if (user.avatar) {
+    user.avatar = process.env.CDN + user.avatar
+  }
   if (user) {
     ctx.body = {
       code: 200,
