@@ -14,6 +14,7 @@ const {
   filterRequestParams,
   SECRET
 } = require('../../utils/tool')
+const { getOSS } = require('../../utils/upload')
 
 // 加载环境变量
 dotenv.config()
@@ -22,11 +23,8 @@ bindAuthMiddware(router, {
   path: ['/api/v1/admin/user/login']
 })
 
-router.post('/login', async ctx => {
-  const {
-    email = '',
-    password = ''
-  } = ctx.request.body
+router.post('/login', async (ctx) => {
+  const { email = '', password = '' } = ctx.request.body
   // 查找用户
   const user = await Admin.findOne({
     email,
@@ -34,11 +32,15 @@ router.post('/login', async ctx => {
   })
   if (user) {
     // 验证成功
-    const token = jsonwebtoken.sign({
-      email: user.email,
-      id: user._id,
-      type: 'admin'
-    }, SECRET, { expiresIn: '24h' })
+    const token = jsonwebtoken.sign(
+      {
+        email: user.email,
+        id: user._id,
+        type: 'admin'
+      },
+      SECRET,
+      { expiresIn: '24h' }
+    )
     ctx.body = {
       code: '200',
       message: '登录成功',
@@ -54,20 +56,15 @@ router.post('/login', async ctx => {
 })
 
 // 添加用户
-router.post('/create', async ctx => {
-  const {
-    username,
-    avatar = '',
-    email,
-    password
-  } = ctx.request.body
+router.post('/create', async (ctx) => {
+  const { username, avatar = '', email, password } = ctx.request.body
   const repeatUser = await Admin.find({
     email
   })
   if (repeatUser.length > 0) {
     ctx.status = 400
     ctx.body = {
-      code: 400,
+      code: '400',
       message: '该邮箱已经存在'
     }
     return
@@ -81,7 +78,7 @@ router.post('/create', async ctx => {
   const errors = parseValidateError(user.validateSync())
   if (errors.length) {
     ctx.body = {
-      code: 400,
+      code: '400',
       message: '参数错误',
       errors
     }
@@ -89,14 +86,70 @@ router.post('/create', async ctx => {
   }
   const result = await user.save()
   ctx.body = {
-    code: 200,
+    code: '200',
     message: '用户添加成功',
     data: result
   }
 })
 
+// 删除用户
+router.post('/delete/:id', async (ctx) => {
+  const id = ctx.params.id
+  const result = await Admin.deleteOne({ _id: id })
+  if (result.deletedCount > 0) {
+    ctx.body = {
+      code: '200',
+      message: '删除成功'
+    }
+    return
+  }
+  ctx.status = 400
+  ctx.body = {
+    code: '400',
+    message: '删除失败'
+  }
+})
+
+// 用户列表
+router.get('/list', async (ctx) => {
+  const user = await Admin.aggregate([
+    {
+      $lookup: {
+        from: 'userroles',
+        localField: '_id',
+        foreignField: 'userId',
+        as: 'userroles'
+      }
+    },
+    {
+      $lookup: {
+        from: 'roles',
+        localField: 'userroles.roleId',
+        foreignField: '_id',
+        as: 'roles'
+      }
+    },
+    {
+      $project: {
+        password: 0,
+        userroles: 0,
+        'roles.__v': 0
+      }
+    }
+  ])
+  if (user.length !== 0) {
+    user.forEach(async (item, index) => {
+      user[index].avatar = await getOSS(item.avatar)
+    })
+  }
+  ctx.body = {
+    code: '200',
+    data: user
+  }
+})
+
 // 更新用户信息
-router.post('/update', async ctx => {
+router.post('/update', async (ctx) => {
   // 解析用户携带的token
   const payload = jwt.decode(ctx.headers.authorization.split(' ')[1], SECRET)
   const user = await Admin.findById(payload.id)
@@ -121,11 +174,16 @@ router.post('/update', async ctx => {
 })
 
 // 获取用户信息
-router.get('/info', async ctx => {
+router.get('/info', async (ctx) => {
   // 解析用户携带的token
-  const { id: userId } = jwt.decode(ctx.headers.authorization.split(' ')[1], SECRET)
+  const { id: userId } = jwt.decode(
+    ctx.headers.authorization.split(' ')[1],
+    SECRET
+  )
   const roles = await getUserRoles(userId)
-  const user = await Admin.findById(userId).select('username avatar email').lean()
+  const user = await Admin.findById(userId)
+    .select('username avatar email')
+    .lean()
   user.roles = roles
   if (user.avatar) {
     user.avatar = process.env.CDN + user.avatar
@@ -146,7 +204,7 @@ router.get('/info', async ctx => {
 })
 
 // 用户更改密码
-router.post('/update/pwd', async ctx => {
+router.post('/update/pwd', async (ctx) => {
   const payload = jwt.decode(ctx.headers.authorization.split(' ')[1], SECRET)
   const user = await Admin.findById(payload.id)
   const {
@@ -192,9 +250,12 @@ router.post('/update/pwd', async ctx => {
     }
 
     // 更新用户密码
-    await Admin.findOneAndUpdate({ _id: payload.id }, {
-      password: md5(newPwd)
-    })
+    await Admin.findOneAndUpdate(
+      { _id: payload.id },
+      {
+        password: md5(newPwd)
+      }
+    )
     ctx.body = {
       code: 200,
       message: '密码更新成功'
@@ -203,7 +264,7 @@ router.post('/update/pwd', async ctx => {
 })
 
 // 获取用户的角色信息
-router.post('/user-roles', async ctx => {
+router.post('/user-roles', async (ctx) => {
   const { userId } = ctx.request.body
   const roles = await getUserRoles(userId)
   ctx.body = {
@@ -214,7 +275,7 @@ router.post('/user-roles', async ctx => {
 })
 
 // 获取用户的权限信息
-router.post('/user-permiss', async ctx => {
+router.post('/user-permiss', async (ctx) => {
   const { userId } = ctx.request.body
   const permission = await getUserPermission(userId)
   ctx.body = {
