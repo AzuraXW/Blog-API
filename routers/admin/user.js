@@ -186,7 +186,7 @@ router.get('/info', async (ctx) => {
     .lean()
   user.roles = roles
   if (user.avatar) {
-    user.avatar = process.env.CDN + user.avatar
+    user.avatar = process.env.CDN + user.avatar + '?timestamp=' + new Date().getTime()
   }
   if (user) {
     ctx.body = {
