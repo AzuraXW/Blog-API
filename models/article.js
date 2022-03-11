@@ -38,6 +38,12 @@ const articleSchema = new Schema({
       message: '内容不能为空'
     }
   },
+  md_content: {
+    type: String
+  },
+  content_img: {
+    type: String
+  },
   create_at: {
     type: Date,
     default: Date.now

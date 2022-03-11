@@ -6,8 +6,10 @@ const router = new Router({
 const Article = require('../../models/article')
 const { parseValidateError, SECRET } = require('../../utils/tool')
 const bindAuthMiddware = require('../../utils/auth')
+const { removeOSS } = require('../../utils/upload')
 
 bindAuthMiddware(router, {})
+const publicBucketDomain = process.env.CDN
 
 // 获取文章列表
 router.get('/list', async (ctx) => {
@@ -104,11 +106,20 @@ router.post('/create', async (ctx) => {
     ctx.headers.authorization.split(' ')[1],
     SECRET
   ).id
-  const { title, content, tag_id: tagId, description } = ctx.request.body
-  console.log(title, content, description)
+  const {
+    title,
+    content,
+    md_content: mdContent,
+    content_img: ContentImg,
+    tag_id: tagId,
+    description
+  } = ctx.request.body
+  console.log(title, mdContent, content, ContentImg)
   const article = new Article({
     title,
     content,
+    md_content: mdContent,
+    content_img: ContentImg,
     tag_id: tagId,
     author_id: authorId,
     description
@@ -128,7 +139,7 @@ router.post('/create', async (ctx) => {
     }
     return
   }
-  ctx.body.status = 400
+  ctx.status = 400
   ctx.body = {
     code: '400',
     message: '文章新建失败',
@@ -167,12 +178,16 @@ router.get('/detail/:id', async (ctx) => {
 // 更新文章
 router.post('/update/:id', async (ctx) => {
   const id = ctx.params.id
-  const result = await Article.findByIdAndUpdate(id, {
-    ...ctx.request.body,
-    update_at: new Date().toString()
-  }, {
-    runValidators: true
-  })
+  const result = await Article.findByIdAndUpdate(
+    id,
+    {
+      ...ctx.request.body,
+      update_at: new Date().toString()
+    },
+    {
+      runValidators: true
+    }
+  )
   ctx.body = {
     code: '200',
     message: '更新成功',
@@ -183,11 +198,20 @@ router.post('/update/:id', async (ctx) => {
 // 删除文章
 router.post('/delete/:id', async (ctx) => {
   const id = ctx.params.id
+  const article = await Article.findById(id)
   const result = await Article.deleteOne({ _id: id })
   if (result.deletedCount > 0) {
     ctx.body = {
       code: '200',
       message: '删除成功'
+    }
+    // 删除文章内容中的图片
+    if (article.content_img !== '') {
+      const imgs = article.content_img.split(',')
+      imgs.forEach(async (img) => {
+        img = img.split(publicBucketDomain)[1]
+        await removeOSS(img)
+      })
     }
     return
   }

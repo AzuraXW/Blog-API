@@ -15,7 +15,7 @@ bindAuthMiddware(router, {})
 dotenv.config()
 const CdnDomain = process.env.CDN
 // 用户头像上传
-router.post('/avatar', async ctx => {
+router.post('/avatar', async (ctx) => {
   const userId = tokenToId(ctx.headers.authorization)
   const avatar = ctx.request.files.avatar
   if (!avatar || !avatar.size) {
@@ -56,7 +56,7 @@ router.post('/avatar', async ctx => {
 // const upload = multer({})
 
 // 符文编辑器上传图片
-router.post('/editor', async ctx => {
+router.post('/editor', async (ctx) => {
   const editor = ctx.request.files.editor
   const time = Date.now()
   if (!editor || !editor.size) {
@@ -73,42 +73,45 @@ router.post('/editor', async ctx => {
   try {
     const result = await uploadOSS(fileKey, editor.path)
     ctx.body = {
-      errno: 0,
-      data: [
-        {
-          url: CdnDomain + result.key,
-          alt: '',
-          href: ''
-        }
-      ]
+      code: '200',
+      url: CdnDomain + result.key
     }
   } catch (error) {
     ctx.status = 400
     ctx.body = {
-      errno: 1
+      code: '400'
     }
   }
 })
 
 // 富文本编辑器删除图片
-router.post('/editor/delete', async ctx => {
+router.post('/editor/delete', async (ctx) => {
   let { imgs = '' } = ctx.request.body
   if (!imgs) {
     return
   }
   imgs = imgs.split(',')
-  imgs.forEach(async (img, index) => {
-    img = img.split(CdnDomain)[1]
-    await removeOSS(img)
-  })
-  ctx.body = {
-    code: '200',
-    message: '删除成功'
+  console.log('imgs')
+  try {
+    imgs.forEach(async (img, index) => {
+      img = img.split(CdnDomain)[1]
+      await removeOSS(img)
+    })
+    ctx.body = {
+      code: '200',
+      message: '删除成功'
+    }
+  } catch (error) {
+    ctx.status = 400
+    ctx.body = {
+      code: '400',
+      error
+    }
   }
 })
 
 // 获取图片
-router.post('/img', async ctx => {
+router.post('/img', async (ctx) => {
   const { key } = ctx.request.body
   const url = await getOSS(key)
   console.log(url)
