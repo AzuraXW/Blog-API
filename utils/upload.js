@@ -7,8 +7,8 @@ const secretKey = process.env.SECRET_KEY
 const publicBucketDomain = process.env.CDN
 const mac = new qiniu.auth.digest.Mac(accessKey, secretKey)
 // 要上传的空间
-// const bucket = 'couldimage'
-const bucket = 'supernbk'
+const bucket = 'couldimage'
+// const bucket = 'supernbk'
 const options = {
   scope: bucket,
   callbackBody:
@@ -43,6 +43,7 @@ function uploadOSS (key, file) {
         if (respErr) {
           reject(respErr)
         }
+        console.log(respInfo)
         if (respInfo.statusCode === 200) {
           resolve(respBody)
         } else {
