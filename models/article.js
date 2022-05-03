@@ -35,7 +35,14 @@ const articleSchema = new Schema({
     type: String,
     validate: {
       validator: notEmptyVaildator,
-      message: '内容不能为空'
+      message: 'html内容 不能为空'
+    }
+  },
+  mdContent: {
+    type: String,
+    validate: {
+      validator: notEmptyVaildator,
+      message: 'markdown 不能为空'
     }
   },
   create_at: {

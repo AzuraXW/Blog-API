@@ -104,14 +104,21 @@ router.post('/create', async (ctx) => {
     ctx.headers.authorization.split(' ')[1],
     SECRET
   ).id
-  const { title, content, tag_id: tagId, description } = ctx.request.body
+  const {
+    title,
+    content,
+    tag_id: tagId,
+    description,
+    md_content: mdContent
+  } = ctx.request.body
   console.log(title, content, description)
   const article = new Article({
     title,
     content,
     tag_id: tagId,
     author_id: authorId,
-    description
+    description,
+    mdContent
   })
   const error = parseValidateError(article.validateSync())
   // error数组为0 参数没有出现错误
@@ -136,7 +143,7 @@ router.post('/create', async (ctx) => {
   }
 })
 
-// 查找单个文章
+// 文章详情
 router.get('/detail/:id', async (ctx) => {
   const id = ctx.params.id
   if (!id) {
