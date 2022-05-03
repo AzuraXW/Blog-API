@@ -4,6 +4,7 @@ const router = new Router({
   prefix: '/api/v1/admin/article'
 })
 const Article = require('../../models/article')
+const Tag = require('../../models/tag')
 const { parseValidateError, SECRET } = require('../../utils/tool')
 const bindAuthMiddware = require('../../utils/auth')
 
@@ -123,6 +124,7 @@ router.post('/create', async (ctx) => {
   const error = parseValidateError(article.validateSync())
   // error数组为0 参数没有出现错误
   if (!error.length) {
+    await Tag.findByIdAndUpdate(tagId, { $inc: { article_count: 1 } })
     // 新建
     const result = await article.save()
     // console.log(result)
@@ -190,8 +192,10 @@ router.post('/update/:id', async (ctx) => {
 // 删除文章
 router.post('/delete/:id', async (ctx) => {
   const id = ctx.params.id
+  const article = await Article.findById(id)
   const result = await Article.deleteOne({ _id: id })
   if (result.deletedCount > 0) {
+    await Tag.findByIdAndUpdate(article.tag_id, { $inc: { article_count: -1 } })
     ctx.body = {
       code: '200',
       message: '删除成功'
