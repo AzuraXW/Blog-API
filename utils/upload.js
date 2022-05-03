@@ -15,24 +15,41 @@ const options = {
     '{"key":"$(key)","hash":"$(etag)","fsize":$(fsize),"bucket":"$(bucket)","name":"$(x:name)"}',
   callbackBodyType: 'application/json'
 }
-const putPolicy = new qiniu.rs.PutPolicy(options)
-const uploadToken = putPolicy.uploadToken(mac)
+let putPolicy = new qiniu.rs.PutPolicy(options)
+let uploadToken = putPolicy.uploadToken(mac)
 
-const config = new qiniu.conf.Config()
+let config = new qiniu.conf.Config()
 // 是否使用https域名
 // config.useHttpsDomain = true
 // 上传是否使用cdn加速
 config.useCdnDomain = true
 
 // 上传
-const formUploader = new qiniu.form_up.FormUploader(config)
+let formUploader = new qiniu.form_up.FormUploader(config)
 // 空间管理
-const bucketManager = new qiniu.rs.BucketManager(mac, config)
-const putExtra = new qiniu.form_up.PutExtra()
+let bucketManager = new qiniu.rs.BucketManager(mac, config)
+let putExtra = new qiniu.form_up.PutExtra()
 // const policy = new qiniu.rs.GetPolicy()
 
+function initOSS() {
+  putPolicy = new qiniu.rs.PutPolicy(options)
+  uploadToken = putPolicy.uploadToken(mac)
+
+  config = new qiniu.conf.Config()
+  // 是否使用https域名
+  // config.useHttpsDomain = true
+  // 上传是否使用cdn加速
+  config.useCdnDomain = true
+
+  // 上传
+  formUploader = new qiniu.form_up.FormUploader(config)
+  // 空间管理
+  bucketManager = new qiniu.rs.BucketManager(mac, config)
+  putExtra = new qiniu.form_up.PutExtra()
+}
+
 // 上传文件
-function uploadOSS (key, file) {
+function uploadOSS(key, file) {
   return new Promise((resolve, reject) => {
     formUploader.putFile(
       uploadToken,
@@ -41,6 +58,7 @@ function uploadOSS (key, file) {
       putExtra,
       function (respErr, respBody, respInfo) {
         if (respErr) {
+          initOSS()
           reject(respErr)
         }
         console.log(respInfo)
@@ -49,6 +67,7 @@ function uploadOSS (key, file) {
         } else {
           // console.log(respInfo.statusCode)
           // console.log(respBody)
+          initOSS()
           reject(respBody)
         }
       }
@@ -57,7 +76,7 @@ function uploadOSS (key, file) {
 }
 
 // 删除空间中的图片
-function removeOSS (key) {
+function removeOSS(key) {
   return new Promise((resolve, reject) => {
     bucketManager.delete(bucket, key, function (err, respBody, respInfo) {
       if (err) {
@@ -70,9 +89,12 @@ function removeOSS (key) {
 }
 
 // 下载空间中图片
-function getOSS (key) {
+function getOSS(key) {
   return new Promise((resolve, reject) => {
-    const publicDownloadUrl = bucketManager.publicDownloadUrl(publicBucketDomain, key)
+    const publicDownloadUrl = bucketManager.publicDownloadUrl(
+      publicBucketDomain,
+      key
+    )
     resolve(publicDownloadUrl)
   })
 }

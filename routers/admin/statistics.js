@@ -133,9 +133,10 @@ router.get('/visit/chart', async (ctx) => {
         .format('LL')
     )
     // 今日的访问人数
-    const todayCount = await Visit.find({
-      create_at: { $gte: d1, $lt: d2 }
-    }).count()
+    const todayCount =
+      (await Visit.find({
+        access_at: { $gte: d1, $lt: d2 }
+      }).count()) || 0
     count += todayCount
     labels.unshift(time)
     data.unshift(todayCount)
