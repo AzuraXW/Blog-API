@@ -4,6 +4,7 @@ const router = new Router({
   prefix: '/api/v1/admin/article'
 })
 const Article = require('../../models/article')
+const Tag = require('../../models/tag')
 const { parseValidateError, SECRET } = require('../../utils/tool')
 const bindAuthMiddware = require('../../utils/auth')
 const { removeOSS } = require('../../utils/upload')
@@ -114,7 +115,7 @@ router.post('/create', async (ctx) => {
     tag_id: tagId,
     description
   } = ctx.request.body
-  console.log(title, mdContent, content, ContentImg)
+  console.log(title, content, description)
   const article = new Article({
     title,
     content,
@@ -122,11 +123,13 @@ router.post('/create', async (ctx) => {
     content_img: ContentImg,
     tag_id: tagId,
     author_id: authorId,
-    description
+    description,
+    mdContent
   })
   const error = parseValidateError(article.validateSync())
   // error数组为0 参数没有出现错误
   if (!error.length) {
+    await Tag.findByIdAndUpdate(tagId, { $inc: { article_count: 1 } })
     // 新建
     const result = await article.save()
     // console.log(result)
@@ -147,7 +150,7 @@ router.post('/create', async (ctx) => {
   }
 })
 
-// 查找单个文章
+// 文章详情
 router.get('/detail/:id', async (ctx) => {
   const id = ctx.params.id
   if (!id) {
@@ -201,6 +204,7 @@ router.post('/delete/:id', async (ctx) => {
   const article = await Article.findById(id)
   const result = await Article.deleteOne({ _id: id })
   if (result.deletedCount > 0) {
+    await Tag.findByIdAndUpdate(article.tag_id, { $inc: { article_count: -1 } })
     ctx.body = {
       code: '200',
       message: '删除成功'
