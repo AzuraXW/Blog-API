@@ -19,7 +19,9 @@ router.get('/list', async (ctx) => {
     limit = 10,
     startTime = 0,
     endTime = Date.now(),
-    keyword = ''
+    keyword = '',
+    type = null,
+    off = 0
   } = ctx.query
   const condition = [
     {
@@ -27,7 +29,9 @@ router.get('/list', async (ctx) => {
         create_at: {
           $gt: new Date(parseInt(startTime)),
           $lt: new Date(parseInt(endTime))
-        }
+        },
+        // 判断是否是获取草稿
+        is_draft: type === 'draft'
       }
     },
     {
@@ -90,14 +94,23 @@ router.get('/list', async (ctx) => {
     conditionTwo.$or = $or
   }
   const articles = await Article.aggregate(condition)
-  let pageCount = await Article.find(conditionTwo).count()
-  pageCount = pageCount === 0 ? 1 : pageCount
-  ctx.body = {
-    code: '200',
-    message: '本次获取' + articles.length + '条文章数据',
-    count: articles.length,
-    pageCount: Math.ceil(pageCount / limit),
-    data: articles
+  if (type !== 'draft') {
+    let pageCount = await Article.find(conditionTwo).count()
+    pageCount = pageCount === 0 ? 1 : pageCount
+    ctx.body = {
+      code: '200',
+      message: `本次获取${articles.length}条文章数据`,
+      count: articles.length,
+      pageCount: Math.ceil(pageCount / limit),
+      data: articles
+    }
+  } else {
+    ctx.body = {
+      code: '200',
+      message: `本次获取${articles.length}条草稿数据`,
+      count: articles.length,
+      data: articles
+    }
   }
 })
 
@@ -113,7 +126,8 @@ router.post('/create', async (ctx) => {
     mdContent,
     content_img: ContentImg,
     tag_id: tagId,
-    description
+    description,
+    is_draft: isDraft
   } = ctx.request.body
   console.log(title, content, description)
   const article = new Article({
@@ -123,7 +137,8 @@ router.post('/create', async (ctx) => {
     tag_id: tagId,
     author_id: authorId,
     description,
-    mdContent
+    mdContent,
+    is_draft: isDraft
   })
   const error = parseValidateError(article.validateSync())
   // error数组为0 参数没有出现错误
@@ -188,6 +203,23 @@ router.post('/update/:id', async (ctx) => {
     },
     {
       runValidators: true
+    }
+  )
+  ctx.body = {
+    code: '200',
+    message: '更新成功',
+    data: result
+  }
+})
+
+// 改变文章的状态
+router.post('/status/:id', async (ctx) => {
+  const id = ctx.params.id
+  const { off } = ctx.request.body
+  const result = await Article.findByIdAndUpdate(
+    id,
+    {
+      off
     }
   )
   ctx.body = {
