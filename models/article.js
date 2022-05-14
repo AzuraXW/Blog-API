@@ -45,9 +45,6 @@ const articleSchema = new Schema({
       message: 'markdown 不能为空'
     }
   },
-  md_content: {
-    type: String
-  },
   content_img: {
     type: String
   },

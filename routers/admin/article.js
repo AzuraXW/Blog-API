@@ -110,7 +110,7 @@ router.post('/create', async (ctx) => {
   const {
     title,
     content,
-    md_content: mdContent,
+    mdContent,
     content_img: ContentImg,
     tag_id: tagId,
     description
@@ -119,7 +119,6 @@ router.post('/create', async (ctx) => {
   const article = new Article({
     title,
     content,
-    md_content: mdContent,
     content_img: ContentImg,
     tag_id: tagId,
     author_id: authorId,

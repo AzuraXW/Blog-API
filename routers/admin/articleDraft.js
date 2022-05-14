@@ -1,7 +1,7 @@
 const Router = require('koa-router')
 const jwt = require('jwt-simple')
 const router = new Router({
-  prefix: '/api/v1/admin/articleDraft'
+  prefix: '/api/v1/admin/article-draft'
 })
 const ArticleDraft = require('../../models/articleDraft')
 const { parseValidateError, SECRET } = require('../../utils/tool')
@@ -54,7 +54,7 @@ router.get('/list', async (ctx) => {
   }
 })
 
-// 添加文章
+// 添加草稿
 router.post('/create', async (ctx) => {
   const authorId = jwt.decode(
     ctx.headers.authorization.split(' ')[1],
@@ -63,14 +63,16 @@ router.post('/create', async (ctx) => {
   const {
     title,
     content,
-    md_content: mdContent,
+    tag_id: tagId,
+    mdContent,
     content_img: ContentImg,
     description
   } = ctx.request.body
   const Article = new ArticleDraft({
     title,
     content,
-    md_content: mdContent,
+    mdContent,
+    tag_id: tagId,
     content_img: ContentImg,
     author_id: authorId,
     description
@@ -95,7 +97,7 @@ router.post('/create', async (ctx) => {
   }
 })
 
-// 查找单个文章
+// 草稿详情
 router.get('/detail/:id', async (ctx) => {
   const id = ctx.params.id
   if (!id) {
@@ -108,6 +110,7 @@ router.get('/detail/:id', async (ctx) => {
   }
 
   const result = await ArticleDraft.findById(id)
+  console.log(result)
   if (result) {
     ctx.body = {
       code: '200',
@@ -123,7 +126,7 @@ router.get('/detail/:id', async (ctx) => {
   }
 })
 
-// 更新文章
+// 更新草稿
 router.post('/update/:id', async (ctx) => {
   const id = ctx.params.id
   const result = await ArticleDraft.findByIdAndUpdate(id, {
@@ -137,7 +140,7 @@ router.post('/update/:id', async (ctx) => {
   }
 })
 
-// 删除文章
+// 删除草稿
 router.post('/delete/:id', async (ctx) => {
   const id = ctx.params.id
   const Article = await ArticleDraft.findById(id)

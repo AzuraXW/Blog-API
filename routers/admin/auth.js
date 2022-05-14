@@ -1,5 +1,4 @@
 const Router = require('koa-router')
-const jwt = require('jwt-simple')
 const router = new Router({
   prefix: '/api/v1/admin'
 })

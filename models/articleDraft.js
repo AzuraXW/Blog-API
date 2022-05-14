@@ -8,19 +8,26 @@ const articleDraftSchema = new Schema({
   description: {
     type: String
   },
+  tag_id: {
+    type: Schema.ObjectId
+  },
   author_id: {
     type: Schema.ObjectId
   },
   content: {
     type: String
   },
-  md_content: {
+  mdContent: {
     type: String
   },
   content_img: {
     type: String
   },
   create_at: {
+    type: Date,
+    default: Date.now
+  },
+  update_at: {
     type: Date,
     default: Date.now
   }
