@@ -56,6 +56,10 @@ const articleSchema = new Schema({
   update_at: {
     type: Date,
     default: Date.now
+  },
+  read: {
+    type: String,
+    default: 0
   }
 })
 

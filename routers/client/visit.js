@@ -6,7 +6,7 @@ const Visit = require('../../models/visit')
 const { getIPAdress } = require('../../utils/ip.js')
 const moment = require('moment')
 
-router.get('/visit', async (ctx) => {
+router.post('/visit', async (ctx) => {
   const ip = getIPAdress()
   console.log(`${ip}访问了网站`)
   // 获取时间段
@@ -29,6 +29,14 @@ router.get('/visit', async (ctx) => {
     code: '200',
     data: result,
     message: '该IP今日已记录'
+  }
+})
+
+router.get('/visit/count', async ctx => {
+  const count = await Visit.find({}).count()
+  ctx.body = {
+    code: '200',
+    count
   }
 })
 
