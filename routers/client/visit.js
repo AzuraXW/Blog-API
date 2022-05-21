@@ -2,6 +2,8 @@ const Router = require('koa-router')
 const router = new Router({
   prefix: '/api/v1'
 })
+const { resolve } = require('path')
+const jsonfile = require('jsonfile')
 const Visit = require('../../models/visit')
 const { getIPAdress } = require('../../utils/ip.js')
 const moment = require('moment')
@@ -37,6 +39,15 @@ router.get('/visit/count', async ctx => {
   ctx.body = {
     code: '200',
     count
+  }
+})
+
+router.get('/site/about', ctx => {
+  const path = resolve(__dirname, '../../data/profile.json')
+  const data = jsonfile.readFileSync(path)
+  ctx.body = {
+    code: '200',
+    data
   }
 })
 

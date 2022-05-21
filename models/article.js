@@ -58,7 +58,7 @@ const articleSchema = new Schema({
     default: Date.now
   },
   read: {
-    type: String,
+    type: Number,
     default: 0
   }
 })
