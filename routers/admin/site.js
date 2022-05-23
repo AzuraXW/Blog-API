@@ -16,5 +16,14 @@ router.post('/about', ctx => {
   }
 })
 
+router.get('/about', ctx => {
+  const path = resolve(__dirname, '../../data/profile.json')
+  const data = jsonfile.readFileSync(path)
+  ctx.body = {
+    code: '200',
+    data
+  }
+})
+
 
 module.exports = router
