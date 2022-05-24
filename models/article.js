@@ -13,9 +13,7 @@ const articleSchema = new Schema({
       message: '文章标题不能为空'
     }
   },
-  tag_id: {
-    type: Schema.ObjectId
-  },
+  tags: [{ type: Schema.Types.ObjectId, ref: 'tag', default: [] }],
   description: {
     type: String,
     validate: {
@@ -23,21 +21,31 @@ const articleSchema = new Schema({
       message: '文章摘要不能为空'
     }
   },
-  author_id: {
+  author: {
     type: Schema.ObjectId,
     validate: {
       validator: notEmptyVaildator,
       message: '作者id不能为空'
-    }
+    },
+    ref: 'admin',
+    default: ''
+  },
+  category: {
+    type: Schema.ObjectId,
+    ref: 'category'
   },
   content: {
-    type: String
+    type: String,
+    default: ''
   },
   mdContent: {
-    type: String
+    type: String,
+    default: ''
+
   },
   content_img: {
-    type: String
+    type: String,
+    default: ''
   },
   // 是否是草稿
   is_draft: {
@@ -66,13 +74,5 @@ const articleSchema = new Schema({
 articleSchema.index({ title: 'text' })
 
 const Article = model('article', articleSchema)
-
-// 设置更新时使用的validator
-Article.schema.path('title').validate(function (value) {
-  return value.length > 0
-}, '标题不能为空')
-Article.schema.path('author_id').validate(function (value) {
-  return value.toString().length > 0
-}, '作者id不能为空')
 
 module.exports = Article

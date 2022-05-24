@@ -9,10 +9,6 @@ const tagSchema = new Schema({
     },
     unique: true
   },
-  article_count: {
-    type: Number,
-    default: 0
-  },
   create_at: {
     type: Date,
     default: Date.now

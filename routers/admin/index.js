@@ -6,6 +6,7 @@ const auth = require('./auth')
 const upload = require('./upload')
 const statistics = require('./statistics')
 const site = require('./site')
+const category = require('./category')
 module.exports = [
   article,
   user,
@@ -14,5 +15,6 @@ module.exports = [
   auth,
   upload,
   statistics,
-  site
+  site,
+  category
 ]

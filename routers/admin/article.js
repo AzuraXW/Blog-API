@@ -5,7 +5,7 @@ const router = new Router({
 })
 const Article = require('../../models/article')
 const Tag = require('../../models/tag')
-const { parseValidateError, SECRET } = require('../../utils/tool')
+const { parseValidateError, SECRET, filterRequestParams } = require('../../utils/tool')
 const bindAuthMiddware = require('../../utils/auth')
 const { removeOSS } = require('../../utils/upload')
 
@@ -23,85 +23,39 @@ router.get('/list', async (ctx) => {
     type = null,
     off = 0
   } = ctx.query
-  const condition = [
-    {
-      $match: {
-        create_at: {
-          $gt: new Date(parseInt(startTime)),
-          $lt: new Date(parseInt(endTime))
-        },
-        // 判断是否是获取草稿
-        is_draft: type === 'draft'
-      }
-    },
-    {
-      $sort: {
-        create_at: -1
-      }
-    },
-    {
-      $skip: (page - 1) * limit
-    },
-    {
-      $limit: parseInt(limit)
-    },
-    {
-      $lookup: {
-        from: 'tags',
-        localField: 'tag_id',
-        foreignField: '_id',
-        as: 'tag'
-      }
-    },
-    {
-      $lookup: {
-        from: 'admins',
-        localField: 'author_id',
-        foreignField: '_id',
-        as: 'author'
-      }
-    },
-    {
-      $project: {
-        tag_id: 0,
-        author_id: 0,
-        'author.role': 0,
-        'author.password': 0,
-        'tag.article_count': 0
-      }
-    },
-    { $unwind: '$author' },
-    { $unwind: '$tag' }
-  ]
-  const conditionTwo = {
+  const condition = {
     create_at: {
       $gt: new Date(parseInt(startTime)),
       $lt: new Date(parseInt(endTime))
-    }
+    },
+    // 判断是否是获取草稿
+    is_draft: type === 'draft'
   }
+
   // 添加搜索关键字条件
   if (keyword) {
-    const $or = [
+    condition.$or = [
       { title: { $regex: keyword, $options: '$i' } },
       { content: { $regex: keyword, $options: '$i' } },
       { description: { $regex: keyword, $options: '$i' } }
     ]
-    condition.push({
-      $match: {
-        $or
-      }
-    })
-    conditionTwo.$or = $or
   }
-  const articles = await Article.aggregate(condition)
+  const total = await Article.find(condition).count()  // 总记录数
+  const articles = await Article.find(condition)
+    .sort({
+      create_at: -1
+    })
+    .skip((page - 1) * limit)
+    .limit(parseInt(limit))
+    .populate('author', ['email', 'username'])
+    .populate('tags', ['name'])
+    .populate('category', ['name', 'cover'])
   if (type !== 'draft') {
-    let pageCount = await Article.find(conditionTwo).count()
-    pageCount = pageCount === 0 ? 1 : pageCount
     ctx.body = {
       code: '200',
       message: `本次获取${articles.length}条文章数据`,
       count: articles.length,
-      pageCount: Math.ceil(pageCount / limit),
+      pageCount: Math.ceil((total || 1) / limit),
       data: articles
     }
   } else {
@@ -120,47 +74,33 @@ router.post('/create', async (ctx) => {
     ctx.headers.authorization.split(' ')[1],
     SECRET
   ).id
-  const {
-    title,
-    content,
-    mdContent,
-    content_img: ContentImg,
-    tag_id: tagId,
-    description,
-    is_draft: isDraft
-  } = ctx.request.body
-  console.log(title, content, description)
+
+  // 过滤参数
+  const field = filterRequestParams(ctx.request.body, [
+    'title',
+    'content',
+    'mdContent',
+    'content_img',
+    'tags',
+    'description',
+    'is_draft',
+    'category'
+  ])
+
   const article = new Article({
-    title,
-    content,
-    content_img: ContentImg,
-    tag_id: tagId,
-    author_id: authorId,
-    description,
-    mdContent,
-    is_draft: isDraft
+    ...field,
+    author: authorId,
+    tags: field.tags ? field.tags.split(',') : []
   })
-  const error = parseValidateError(article.validateSync())
-  // error数组为0 参数没有出现错误
-  if (!error.length) {
-    await Tag.findByIdAndUpdate(tagId, { $inc: { article_count: 1 } })
-    // 新建
-    const result = await article.save()
-    // console.log(result)
-    ctx.body = {
-      code: '200',
-      message: '新建文章成功',
-      data: {
-        create_id: result._id
-      }
-    }
-    return
-  }
-  ctx.status = 400
+
+  // 新建
+  const result = await article.save()
   ctx.body = {
-    code: '400',
-    message: '文章新建失败',
-    errors: error
+    code: '200',
+    message: '新建文章成功',
+    data: {
+      create_id: result._id
+    }
   }
 })
 
@@ -175,8 +115,11 @@ router.get('/detail/:id', async (ctx) => {
     }
     return
   }
-
   const result = await Article.findById(id)
+    .populate('author', ['email', 'username'])
+    .populate('tags', ['name'])
+    .populate('category', ['name', 'cover'])
+
   if (result) {
     ctx.body = {
       code: '200',
@@ -185,6 +128,7 @@ router.get('/detail/:id', async (ctx) => {
     }
     return
   }
+
   ctx.status = 400
   ctx.body = {
     code: '300',
@@ -195,10 +139,12 @@ router.get('/detail/:id', async (ctx) => {
 // 更新文章
 router.post('/update/:id', async (ctx) => {
   const id = ctx.params.id
+  const { tags } = ctx.request.body
   const result = await Article.findByIdAndUpdate(
     id,
     {
       ...ctx.request.body,
+      tags: tags ? tags.split(',') : [],
       update_at: new Date().toString()
     },
     {
@@ -235,7 +181,6 @@ router.post('/delete/:id', async (ctx) => {
   const article = await Article.findById(id)
   const result = await Article.deleteOne({ _id: id })
   if (result.deletedCount > 0) {
-    await Tag.findByIdAndUpdate(article.tag_id, { $inc: { article_count: -1 } })
     ctx.body = {
       code: '200',
       message: '删除成功'

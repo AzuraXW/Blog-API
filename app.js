@@ -19,6 +19,20 @@ app.use(koaBody({
 // 跨域
 app.use(cors())
 
+app.use(async (ctx, next) => {
+  try {
+    await next()
+  } catch (err) {
+    console.log(err)
+    ctx.status = 400,
+      ctx.body = {
+        code: '400',
+        message: '服务器发生错误',
+        error: err
+      }
+  }
+})
+
 // 添加路由中间件
 clientRouters.forEach((router) => {
   app.use(router.routes(), router.allowedMethods())
@@ -28,10 +42,10 @@ adminRouters.forEach((router) => {
 })
 
 // 集中处理错误
-onerror(app, {
-  all: (err) => {
-    console.log(err.message)
-  }
-})
+// onerror(app, {
+//   all: (err) => {
+//     console.log(err.message)
+//   }
+// })
 
 app.listen(3000)

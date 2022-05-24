@@ -31,7 +31,7 @@ let bucketManager = new qiniu.rs.BucketManager(mac, config)
 let putExtra = new qiniu.form_up.PutExtra()
 // const policy = new qiniu.rs.GetPolicy()
 
-function initOSS() {
+function initOSS () {
   putPolicy = new qiniu.rs.PutPolicy(options)
   uploadToken = putPolicy.uploadToken(mac)
 
@@ -49,7 +49,7 @@ function initOSS() {
 }
 
 // 上传文件
-function uploadOSS(key, file) {
+function uploadOSS (key, file) {
   return new Promise((resolve, reject) => {
     formUploader.putFile(
       uploadToken,
@@ -61,7 +61,6 @@ function uploadOSS(key, file) {
           initOSS()
           reject(respErr)
         }
-        console.log(respInfo)
         if (respInfo.statusCode === 200) {
           resolve(respBody)
         } else {
@@ -76,7 +75,7 @@ function uploadOSS(key, file) {
 }
 
 // 删除空间中的图片
-function removeOSS(key) {
+function removeOSS (key) {
   return new Promise((resolve, reject) => {
     bucketManager.delete(bucket, key, function (err, respBody, respInfo) {
       if (err) {
@@ -89,7 +88,7 @@ function removeOSS(key) {
 }
 
 // 下载空间中图片
-function getOSS(key) {
+function getOSS (key) {
   return new Promise((resolve, reject) => {
     const publicDownloadUrl = bucketManager.publicDownloadUrl(
       publicBucketDomain,

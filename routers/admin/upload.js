@@ -28,10 +28,11 @@ router.post('/avatar', async (ctx) => {
     return
   }
   // 上传的文件名
-  const fileKey = 'avatar_' + userId
+  const fileKey = 'avatar/' + userId
+  const preAvatar = await (Admin.findById(userId)).avatar
   try {
     // 删除用户原来的头像
-    await removeOSS(fileKey)
+    await removeOSS(preAvatar)
     // 上传新的用户头像
     const result = await uploadOSS(fileKey, avatar.path)
     // 更新用户的头像
@@ -69,7 +70,7 @@ router.post('/editor', async (ctx) => {
     return
   }
   // 上传的文件名
-  const fileKey = `editor_${time}`
+  const fileKey = `editor/${time}`
   try {
     const result = await uploadOSS(fileKey, editor.path)
     ctx.body = {

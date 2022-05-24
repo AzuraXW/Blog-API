@@ -1,4 +1,6 @@
 const jwt = require('jwt-simple')
+const dotenv = require('dotenv')
+dotenv.config()
 
 /**
  * 解析model验证器返回的错误
@@ -40,9 +42,15 @@ function tokenToId (token) {
   ).id
 }
 
+// 获取cdn域名
+function cdnDomain () {
+  return process.env.CDN
+}
+
 module.exports = {
   parseValidateError,
   filterRequestParams,
   SECRET,
-  tokenToId
+  tokenToId,
+  cdnDomain
 }
