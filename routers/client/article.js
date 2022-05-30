@@ -7,84 +7,39 @@ const router = new Router({
 const { parseValidateError } = require('../../utils/tool')
 
 router.get('/list', async ctx => {
-  const { page = 1,
+  const {
+    page = 1,
     limit = 8,
-    tag = '',
-    tag_id: tagId = '',
     sort_key,
     sort_rule = 1
   } = ctx.query
-  const condition = [
-    {
-      $sort: {
-        create_at: -1
-      }
-    },
-    {
-      $lookup: {
-        from: 'tags',
-        localField: 'tag_id',
-        foreignField: '_id',
-        as: 'tag'
-      }
-    },
-    {
-      $lookup: {
-        from: 'admins',
-        localField: 'author_id',
-        foreignField: '_id',
-        as: 'author'
-      }
-    },
-    {
-      $project: {
-        tag_id: 0,
-        author_id: 0,
-        content: 0,
-        'author.role': 0,
-        'author.password': 0,
-        'author.email': 0,
-        'author.avatar': 0,
-        'tag.article_count': 0
-      }
-    },
-    { $unwind: '$author' },
-    { $unwind: '$tag' }
-  ]
-  // 添加标签筛选条件
-  if (tag) {
-    condition.push({
-      $match: {
-        'tag.name': tag
-      }
-    })
-  }
-  // 使用标签id也可以进行筛选
-  if (tagId) {
-    condition.push({
-      $match: {
-        'tag._id': mongoose.Types.ObjectId(tagId)
-      }
-    })
-  }
+  const query = Article.find()
   // 添加排序
   if (sort_key) {
-    condition.push({
-      $sort: {
-        [sort_key]: parseInt(sort_rule)
-      }
+    query.sort({
+      [sort_key]: parseInt(sort_rule)
+    })
+  } else if (sort_key !== 'create_at') {
+    query.sort({
+      create_at: -1
     })
   }
-  // 最后添加分页条件
-  condition.push(
-    {
-      $skip: page - 1
-    },
-    {
-      $limit: parseInt(limit)
-    }
-  )
-  const articles = await Article.aggregate(condition)
+  query
+    .skip((page - 1) * limit)
+    .limit(parseInt(limit))
+    .populate('author', ['email', 'username'])
+    .populate('tags', ['name'])
+    .populate('category', ['name', 'cover'])
+    .select({
+      title: 1,
+      author: 1,
+      description: 1,
+      tags: 1,
+      read: 1,
+      create_at: 1,
+      category: 1
+    })
+  const articles = await query.exec()
   const count = await Article.find({}).count()
   ctx.body = {
     code: 200,
@@ -96,49 +51,14 @@ router.get('/list', async ctx => {
 
 router.get('/detail/:id', async ctx => {
   const id = ctx.params.id
-  const article = await Article.aggregate([
-    {
-      $match: {
-        _id: mongoose.Types.ObjectId(id)
-      }
-    },
-    {
-      $lookup: {
-        from: 'tags',
-        localField: 'tag_id',
-        foreignField: '_id',
-        as: 'tag'
-      }
-    },
-    {
-      $lookup: {
-        from: 'admins',
-        localField: 'author_id',
-        foreignField: '_id',
-        as: 'author'
-      }
-    },
-    { $unwind: '$author' },
-    { $unwind: '$tag' },
-    {
-      $project: {
-        tag_id: 0,
-        author_id: 0,
-        is_draft: 0,
-        off: 0,
-        content_img: 0,
-        'author.role': 0,
-        'author.password': 0,
-        'author.email': 0,
-        'author.avatar': 0,
-        'tag.article_count': 0
-      }
-    }
-  ])
+  const article = await Article.findById(id)
+    .populate('author', ['email', 'username'])
+    .populate('tags', ['name'])
+    .populate('category', ['name', 'cover'])
   ctx.body = {
     code: '200',
     message: '获取成功',
-    data: article[0]
+    data: article
   }
 })
 
@@ -171,8 +91,9 @@ router.get('/search', async ctx => {
 router.post('/read/:id', async ctx => {
   const id = ctx.params.id
   const article = await Article.findById(id)
-  article.read = parseInt(article.read) + 1
-  await article.save()
+  await Article.findByIdAndUpdate(id, {
+    read: parseInt(article.read) + 1
+  })
   ctx.body = {
     code: '200',
     message: 'OK'
